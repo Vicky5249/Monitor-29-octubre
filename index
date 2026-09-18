@@ -1,0 +1,345 @@
+"""
+===============================================================================
+ ANIMACIONES DE MÉTODOS NUMÉRICOS PARA RAÍCES DE ECUACIONES
+===============================================================================
+ Requisitos: pip install numpy matplotlib
+ Ejecución:  python metodos_numericos.py
+===============================================================================
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+
+# =============================================================================
+# FUNCIONES MATEMÁTICAS DE PRUEBA
+# =============================================================================
+def f_estandar(x):
+    return x**3 - x - 2
+
+def df_estandar(x):
+    return 3*x**2 - 1
+
+def g_estandar(x):
+    return np.cbrt(x + 2)
+
+def f_mecanica(theta):
+    return np.tan(theta) - 2*theta
+
+
+# =============================================================================
+# 2.1. MÉTODOS DE INTERVALOS
+# =============================================================================
+
+def animar_metodo_grafico():
+    """2.1.1 Método Gráfico: Búsqueda de cambio de signo en subintervalos."""
+    fig, ax = plt.subplots(figsize=(8, 5))
+    x_vals = np.linspace(0.8, 2.4, 300)
+    y_vals = f_estandar(x_vals)
+    x_steps = np.linspace(1.0, 2.2, 13)
+
+    def update(frame):
+        ax.clear()
+        ax.plot(x_vals, y_vals, 'b-', lw=2, label='$f(x) = x^3 - x - 2$')
+        ax.axhline(0, color='gray', linestyle='--')
+        ax.grid(True, alpha=0.3)
+        
+        x1, x2 = x_steps[frame], x_steps[frame+1]
+        f1, f2 = f_estandar(x1), f_estandar(x2)
+        change = (f1 * f2) < 0
+        
+        color = 'green' if change else 'orange'
+        ax.plot([x1, x2], [f1, f2], 'o-', color=color, lw=3, ms=8)
+        ax.axvline(x1, color='orange', linestyle=':')
+        ax.axvline(x2, color='orange', linestyle=':')
+        
+        if change:
+            ax.axvspan(x1, x2, color='green', alpha=0.3, label='¡Raíz Detectada!')
+            
+        ax.set_title(f"2.1.1 Método Gráfico - Paso {frame+1}: [{x1:.2f}, {x2:.2f}]")
+        ax.legend(loc='upper left')
+
+    anim = FuncAnimation(fig, update, frames=len(x_steps)-1, interval=1000, repeat=True)
+    plt.show()
+
+
+def animar_biseccion():
+    """2.1.1 Método de Bisección: División sucesiva del intervalo a la mitad."""
+    steps = []
+    a, b = 1.0, 2.2
+    for _ in range(10):
+        c = (a + b) / 2.0
+        steps.append((a, b, c, f_estandar(c)))
+        if f_estandar(a) * f_estandar(c) < 0:
+            b = c
+        else:
+            a = c
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    x_vals = np.linspace(0.8, 2.4, 300)
+
+    def update(frame):
+        ax.clear()
+        ax.plot(x_vals, f_estandar(x_vals), 'b-', lw=2, label='$f(x) = x^3 - x - 2$')
+        ax.axhline(0, color='gray', linestyle='--')
+        ax.grid(True, alpha=0.3)
+        
+        a_k, b_k, c_k, fc_k = steps[frame]
+        
+        ax.axvspan(a_k, b_k, color='lightblue', alpha=0.3, label='Intervalo activo')
+        ax.axvline(a_k, color='red', linestyle='--', label=f'a = {a_k:.4f}')
+        ax.axvline(b_k, color='purple', linestyle='--', label=f'b = {b_k:.4f}')
+        ax.axvline(c_k, color='green', linestyle='-', lw=2, label=f'Punto medio c = {c_k:.4f}')
+        ax.plot(c_k, fc_k, 'go', ms=8)
+        
+        ax.set_title(f"2.1.1 Bisección - Iteración {frame+1}: c = {c_k:.5f}")
+        ax.legend(loc='upper left')
+
+    anim = FuncAnimation(fig, update, frames=len(steps), interval=1200, repeat=True)
+    plt.show()
+
+
+def animar_falsa_posicion():
+    """2.1.1 Método de Falsa Posición: Interpolación lineal entre extremos."""
+    steps = []
+    a, b = 1.0, 2.2
+    for _ in range(10):
+        fa, fb = f_estandar(a), f_estandar(b)
+        c = b - (fb * (b - a)) / (fb - fa)
+        fc = f_estandar(c)
+        steps.append((a, b, c, fa, fb, fc))
+        if fa * fc < 0:
+            b = c
+        else:
+            a = c
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    x_vals = np.linspace(0.8, 2.4, 300)
+
+    def update(frame):
+        ax.clear()
+        ax.plot(x_vals, f_estandar(x_vals), 'b-', lw=2, label='$f(x) = x^3 - x - 2$')
+        ax.axhline(0, color='gray', linestyle='--')
+        ax.grid(True, alpha=0.3)
+        
+        a_k, b_k, c_k, fa_k, fb_k, fc_k = steps[frame]
+        
+        ax.plot([a_k, b_k], [fa_k, fb_k], 'r--', lw=2, label='Recta Secante')
+        ax.plot([a_k, b_k, c_k], [fa_k, fb_k, fc_k], 'ro', ms=6)
+        ax.axvline(c_k, color='green', linestyle=':', lw=2, label=f'Aprox c = {c_k:.4f}')
+        
+        ax.set_title(f"2.1.1 Falsa Posición - Iteración {frame+1}: c = {c_k:.5f}")
+        ax.legend(loc='upper left')
+
+    anim = FuncAnimation(fig, update, frames=len(steps), interval=1200, repeat=True)
+    plt.show()
+
+
+# =============================================================================
+# 2.2. MÉTODOS ABIERTOS
+# =============================================================================
+
+def animar_punto_fijo():
+    """2.2.1 Iteración de Punto Fijo: Diagrama de Telaraña (Cobweb Plot)."""
+    x0 = 1.0
+    pts = [(x0, x0)]
+    for _ in range(10):
+        x1 = g_estandar(x0)
+        pts.append((x0, x1))
+        pts.append((x1, x1))
+        x0 = x1
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    x_vals = np.linspace(0.8, 2.2, 300)
+
+    def update(frame):
+        ax.clear()
+        ax.plot(x_vals, x_vals, 'k--', label='y = x')
+        ax.plot(x_vals, g_estandar(x_vals), 'b-', lw=2, label='$g(x) = (x+2)^{1/3}$')
+        ax.grid(True, alpha=0.3)
+        
+        sub_pts = np.array(pts[:frame+1])
+        if len(sub_pts) > 1:
+            ax.plot(sub_pts[:, 0], sub_pts[:, 1], 'r-', lw=1.5, marker='o', ms=4, label='Telaraña')
+            
+        curr_x = sub_pts[-1][0]
+        ax.set_title(f"2.2.1 Punto Fijo - Paso {frame+1}: x = {curr_x:.5f}")
+        ax.legend(loc='upper left')
+
+    anim = FuncAnimation(fig, update, frames=len(pts), interval=600, repeat=True)
+    plt.show()
+
+
+def animar_newton_raphson():
+    """2.2.1 Método de Newton-Raphson: Trazado de rectas tangentes."""
+    x0 = 2.2
+    steps = []
+    for _ in range(7):
+        fx = f_estandar(x0)
+        dfx = df_estandar(x0)
+        x1 = x0 - fx / dfx
+        steps.append((x0, fx, dfx, x1))
+        x0 = x1
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    x_vals = np.linspace(0.8, 2.4, 300)
+
+    def update(frame):
+        ax.clear()
+        ax.plot(x_vals, f_estandar(x_vals), 'b-', lw=2, label='$f(x) = x^3 - x - 2$')
+        ax.axhline(0, color='gray', linestyle='--')
+        ax.grid(True, alpha=0.3)
+        
+        x_k, fx_k, dfx_k, x_next = steps[frame]
+        
+        x_tang = np.linspace(min(x_k, x_next)-0.2, max(x_k, x_next)+0.2, 50)
+        y_tang = fx_k + dfx_k * (x_tang - x_k)
+        
+        ax.plot(x_tang, y_tang, 'r-', lw=2, label='Recta Tangente')
+        ax.plot([x_k, x_k], [0, fx_k], 'k:', lw=1.5)
+        ax.plot(x_k, fx_k, 'ro', ms=7)
+        ax.plot(x_next, 0, 'go', ms=8, label=f'Nuevo $x_{{n+1}} = {x_next:.4f}$')
+        
+        ax.set_title(f"2.2.1 Newton-Raphson - Iteración {frame+1}: x = {x_next:.5f}")
+        ax.legend(loc='upper left')
+
+    anim = FuncAnimation(fig, update, frames=len(steps), interval=1500, repeat=True)
+    plt.show()
+
+
+def animar_secante():
+    """2.2.1 Método de la Secante: Aproximación de derivadas con dos puntos."""
+    x0, x1 = 1.0, 2.2
+    steps = []
+    for _ in range(7):
+        f0, f1 = f_estandar(x0), f_estandar(x1)
+        x2 = x1 - f1 * (x1 - x0) / (f1 - f0)
+        steps.append((x0, x1, x2, f0, f1))
+        x0, x1 = x1, x2
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    x_vals = np.linspace(0.8, 2.4, 300)
+
+    def update(frame):
+        ax.clear()
+        ax.plot(x_vals, f_estandar(x_vals), 'b-', lw=2, label='$f(x) = x^3 - x - 2$')
+        ax.axhline(0, color='gray', linestyle='--')
+        ax.grid(True, alpha=0.3)
+        
+        x0_k, x1_k, x2_k, f0_k, f1_k = steps[frame]
+        
+        x_sec = np.linspace(min(x0_k, x1_k, x2_k)-0.2, max(x0_k, x1_k, x2_k)+0.2, 50)
+        y_sec = f1_k + (f1_k - f0_k)/(x1_k - x0_k) * (x_sec - x1_k)
+        
+        ax.plot(x_sec, y_sec, 'r-', lw=2, label='Recta Secante')
+        ax.plot([x0_k, x1_k], [f0_k, f1_k], 'ro', ms=7)
+        ax.plot(x2_k, 0, 'go', ms=8, label=f'Nuevo $x_{{n+1}} = {x2_k:.4f}$')
+        
+        ax.set_title(f"2.2.1 Método de la Secante - Iteración {frame+1}: x = {x2_k:.5f}")
+        ax.legend(loc='upper left')
+
+    anim = FuncAnimation(fig, update, frames=len(steps), interval=1500, repeat=True)
+    plt.show()
+
+
+# =============================================================================
+# 2.3. APLICACIONES A LA INGENIERÍA MECÁNICA
+# =============================================================================
+
+def animar_aplicacion_mecanica():
+    """2.3.1 Aplicación a Ing. Mecánica: Pandeo y flexibilidad en viga."""
+    a, b = 1.0, 1.45
+    steps = []
+    for _ in range(10):
+        fa, fb = f_mecanica(a), f_mecanica(b)
+        c = b - (fb * (b - a)) / (fb - fa)
+        fc = f_mecanica(c)
+        steps.append((c, fc))
+        if fa * fc < 0:
+            b = c
+        else:
+            a = c
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 7))
+    theta_vals = np.linspace(1.0, 1.48, 300)
+
+    def update(frame):
+        c_k, fc_k = steps[frame]
+        
+        # Gráfica matemática
+        ax1.clear()
+        ax1.plot(theta_vals, f_mecanica(theta_vals), 'b-', lw=2, label=r'$f(\theta) = \tan(\theta) - 2\theta$')
+        ax1.axhline(0, color='gray', linestyle='--')
+        ax1.plot(c_k, fc_k, 'ro', ms=8, label=f'Ángulo crítico $\\theta = {c_k:.4f}$ rad')
+        ax1.grid(True, alpha=0.3)
+        ax1.set_title(f"2.3.1 Ing. Mecánica - Iteración {frame+1}: $\\theta_c \\approx {c_k:.4f}$ rad ({np.degrees(c_k):.2f}°)")
+        ax1.legend(loc='upper left')
+        
+        # Esquema mecánico
+        ax2.clear()
+        L = 10.0
+        x_beam = np.linspace(0, L, 100)
+        deflection = np.sin(np.pi * x_beam / L) * (c_k * 1.5)
+        
+        ax2.plot(x_beam, deflection, 'orange', lw=4, label='Modo de Pandeo en Viga')
+        ax2.plot([0, L], [0, 0], 'k--', alpha=0.5)
+        ax2.plot(0, 0, '^r', ms=12)
+        ax2.plot(L, 0, 'or', ms=10)
+        
+        ax2.set_ylim(-1.5, 2.5)
+        ax2.set_title("Esquema Físico: Deformada de la Viga bajo Carga Axial")
+        ax2.grid(True, alpha=0.3)
+        ax2.legend(loc='upper left')
+
+    anim = FuncAnimation(fig, update, frames=len(steps), interval=1200, repeat=True)
+    plt.tight_layout()
+    plt.show()
+
+
+# =============================================================================
+# MENÚ PRINCIPAL
+# =============================================================================
+
+if __name__ == '__main__':
+    menu = """
+    =======================================================
+               SELECCIONA LA ANIMACIÓN A EJECUTAR          
+    =======================================================
+    2.1. METODOS DE INTERVALOS
+       [1] 2.1.1 Método Gráfico
+       [2] 2.1.1 Método de Bisección
+       [3] 2.1.1 Método de Falsa Posición
+
+    2.2. METODOS ABIERTOS
+       [4] 2.2.1 Iteración de Punto Fijo
+       [5] 2.2.1 Método de Newton-Raphson
+       [6] 2.2.1 Método de la Secante
+
+    2.3. APLICACIONES A LA INGENIERÍA MECÁNICA
+       [7] 2.3.1 Pandeo de Viga (Estabilidad)
+
+    [0] Salir
+    =======================================================
+    """
+    
+    opciones = {
+        '1': animar_metodo_grafico,
+        '2': animar_biseccion,
+        '3': animar_falsa_posicion,
+        '4': animar_punto_fijo,
+        '5': animar_newton_raphson,
+        '6': animar_secante,
+        '7': animar_aplicacion_mecanica
+    }
+
+    while True:
+        print(menu)
+        opcion = input("Ingresa el número del método que deseas ver: ").strip()
+        
+        if opcion == '0':
+            print("Programa finalizado.")
+            break
+        elif opcion in opciones:
+            opciones[opcion]()
+        else:
+            print("\nOpción inválida. Intenta nuevamente.")
