@@ -1,1 +1,1 @@
-# Metodos-numericos
+# Monitor de amplificador
